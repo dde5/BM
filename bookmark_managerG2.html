@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>開發書籤管理器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-controls {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            gap: 15px;
+        }
+
+        .toggle-add-form-btn {
+            background: linear-gradient(135deg, #5660ec 0%, #855fc5 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 15px rgba(102, 126, 234, 0.25);
+        }
+        .toggle-add-form-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.35);
+        }
+
+        .add-section {
+            background: rgba(255, 255, 255, 0.97);
+            backdrop-filter: blur(15px);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            display: none;
+        }
+
+        .add-section.visible {
+            display: block;
+            animation: slideDownFadeIn 0.5s ease-out forwards;
+        }
+
+        @keyframes slideDownFadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group { margin-bottom: 18px; }
+        .form-group label {
+            display: block; margin-bottom: 6px; font-weight: 600;
+            color: #444; font-size: 0.9rem;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%; padding: 12px 18px; border: 1px solid #d1d5db;
+            border-radius: 10px; font-size: 1rem; transition: all 0.3s ease;
+            background: rgba(255,255,255,0.9);
+        }
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none; border-color: #667eea; background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+        }
+        .form-group textarea { resize: vertical; min-height: 90px; }
+
+        .add-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; border: none; padding: 14px 28px; border-radius: 10px;
+            font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+            display: block; width: 100%; margin-top: 10px;
+        }
+        .add-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .bookmarks-area {
+            background: rgba(255, 255, 255, 0.97); backdrop-filter: blur(15px);
+            border-radius: 16px; padding: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .bookmarks-toolbar {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e5e7eb;
+            flex-wrap: wrap; gap: 15px;
+        }
+        
+        .sort-controls label { margin-right: 8px; font-weight: 500; color: #555; }
+        .sort-controls select {
+            padding: 8px 12px; border-radius: 8px; border: 1px solid #d1d5db;
+            background-color: white; font-size: 0.9rem; cursor: pointer;
+        }
+        .sort-controls select:focus {
+            outline: none; border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .import-export-buttons { display: flex; gap: 10px; }
+        .action-button {
+            padding: 8px 14px; border: none; border-radius: 8px;
+            font-size: 0.85rem; font-weight: 600; cursor: pointer;
+            transition: all 0.3s ease; display: flex; align-items: center; gap: 6px;
+        }
+        .import-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white;
+            box-shadow: 0 4px 10px rgba(40, 167, 69, 0.25);
+        }
+        .import-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(40, 167, 69, 0.35); }
+        .export-btn {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%); color: white;
+            box-shadow: 0 4px 10px rgba(23, 162, 184, 0.25);
+        }
+        .export-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(23, 162, 184, 0.35); }
+
+        .bookmarks-header-info { display: flex; align-items: center; gap: 15px; }
+        .bookmarks-header-info h2 { color: #333; font-size: 1.6rem; font-weight: 700; }
+        .bookmark-count {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;
+            padding: 7px 14px; border-radius: 16px; font-size: 0.85rem; font-weight: 600;
+        }
+
+        .bookmarks-list { display: grid; gap: 18px; }
+        .bookmark-item {
+            background: white; border-radius: 12px; padding: 18px;
+            border: 1px solid #e5e7eb; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: grab; position: relative; overflow: hidden;
+        }
+        .bookmark-item::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transform: scaleX(0); transition: transform 0.3s ease;
+        }
+        .bookmark-item:hover {
+            transform: translateY(-4px); border-color: #a5b4fc;
+            box-shadow: 0 12px 25px rgba(102, 126, 234, 0.12);
+        }
+        .bookmark-item:hover::before { transform: scaleX(1); }
+        .bookmark-item.dragging { opacity: 0.6; transform: rotate(3deg); cursor: grabbing; }
+
+        .bookmark-header {
+            display: flex; justify-content: space-between;
+            align-items: flex-start; margin-bottom: 12px;
+        }
+        .bookmark-info { flex: 1; }
+        .bookmark-title {
+            font-size: 1.1rem; font-weight: 600; color: #333;
+            margin-bottom: 6px; word-break: break-all; display: flex; align-items: center;
+        }
+        .note-indicator {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 22px; height: 22px; background: #e9ecef; color: #667eea;
+            border-radius: 50%; font-size: 11px; font-weight: 600; cursor: pointer;
+            margin-left: 8px; transition: all 0.3s ease;
+        }
+        .note-indicator:hover { background: #667eea; color: white; transform: scale(1.1); }
+
+        .bookmark-url {
+            color: #667eea; text-decoration: none; font-size: 0.9rem;
+            transition: all 0.3s ease; word-break: break-all;
+            display: block; margin-bottom: 6px;
+        }
+        .bookmark-url:hover { color: #764ba2; text-decoration: underline; }
+        
+        .bookmark-meta { font-size: 0.8rem; color: #777; margin-bottom: 8px; }
+        .bookmark-group, .bookmark-created {
+            display: inline-block; margin-right: 12px; padding: 3px 8px;
+            background-color: #f3f4f6; border-radius: 6px;
+        }
+
+        .bookmark-note-content {
+            display: none; margin-top: 12px; padding: 12px; background: #f8f9fa;
+            border-radius: 8px; border-left: 3px solid #667eea;
+            color: #555; line-height: 1.5; font-size: 0.9rem;
+            animation: fadeInNote 0.3s ease;
+        }
+        .bookmark-note-content.visible { display: block; }
+        @keyframes fadeInNote { from { opacity: 0; } to { opacity: 1; } }
+
+        .bookmark-actions { display: flex; gap: 8px; margin-left: 12px; }
+        .bookmark-actions .action-btn {
+            width: 32px; height: 32px; border: none; border-radius: 6px; cursor: pointer;
+            transition: all 0.3s ease; display: flex; align-items: center; justify-content: center;
+            font-size: 14px; background: #f8f9fa; padding: 0; margin: 0;
+        }
+        .edit-btn { color: #667eea; }
+        .edit-btn:hover { background: #667eea; color: white; transform: scale(1.1); }
+        .delete-btn { color: #e74c3c; }
+        .delete-btn:hover { background: #e74c3c; color: white; transform: scale(1.1); }
+        .drag-handle { color: #999; cursor: grab; }
+        .drag-handle:hover { background: #e9ecef; color: #667eea; }
+
+        .tooltip {
+            position: fixed; background: rgba(0, 0, 0, 0.85); color: white;
+            padding: 10px 14px; border-radius: 6px; font-size: 0.85rem;
+            max-width: 350px; z-index: 1000; opacity: 0; pointer-events: none;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.25); backdrop-filter: blur(5px);
+            white-space: pre-wrap; line-height: 1.4; transform: translateY(8px);
+        }
+        .tooltip.show { opacity: 1; transform: translateY(0); }
+
+        .empty-state { text-align: center; padding: 50px 20px; color: #888; }
+        .empty-state svg { width: 70px; height: 70px; margin-bottom: 18px; opacity: 0.4; }
+        .empty-state h3 { font-size: 1.4rem; margin-bottom: 8px; }
+
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px);
+            z-index: 2000; justify-content: center; align-items: center;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: white; border-radius: 16px; padding: 25px;
+            max-width: 500px; width: 90%; max-height: 85vh; overflow-y: auto;
+            transform: scale(0.95); opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        .modal.show .modal-content { transform: scale(1); opacity: 1;}
+        .modal-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid #e5e7eb;
+        }
+        .modal-header h3 { color: #333; font-size: 1.4rem; font-weight: 700; }
+        .close-btn {
+            width: 30px; height: 30px; border: none; background: #f1f3f5;
+            border-radius: 6px; cursor: pointer; display: flex;
+            align-items: center; justify-content: center;
+            font-size: 16px; color: #888; transition: all 0.3s ease;
+        }
+        .close-btn:hover { background: #e9ecef; color: #333; }
+
+        .modal-buttons { margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; }
+        .save-btn, .cancel-btn {
+            border: none; padding: 10px 20px; border-radius: 8px;
+            font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease;
+        }
+        .save-btn { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; }
+        .save-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(40, 167, 69, 0.3); }
+        .cancel-btn { background: #6c757d; color: white; }
+        .cancel-btn:hover { background: #5a6268; transform: translateY(-2px); }
+
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2.2rem; }
+            .header p { font-size: 1rem; }
+            .main-controls { flex-direction: column; align-items: stretch;}
+            .toggle-add-form-btn { width: 100%; }
+            
+            .add-section, .bookmarks-area { padding: 20px; }
+            .bookmarks-toolbar { flex-direction: column; align-items: stretch; gap: 15px;}
+            .sort-controls, .import-export-buttons { width: 100%; display: flex; justify-content: space-between; }
+            .sort-controls select { flex-grow: 1; }
+
+            .bookmark-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .bookmark-actions { margin-left: 0; margin-top: 8px; width: 100%; justify-content: flex-start; }
+        }
+
+        .fade-in { animation: fadeInGlobal 0.5s ease forwards; }
+        @keyframes fadeInGlobal {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 開發書籤管理器</h1>
+            <p>記錄你的開發進度與問題追蹤</p>
+        </div>
+
+        <div class="main-controls">
+            <button class="toggle-add-form-btn" id="toggleAddFormBtn" onclick="toggleAddForm()">
+                ✨ 開啟新增介面
+            </button>
+        </div>
+
+        <div class="add-section" id="addSection">
+            <div class="form-group">
+                <label for="urlInput">網址 *</label>
+                <input type="url" id="urlInput" placeholder="https://example.com" required>
+            </div>
+            <div class="form-group">
+                <label for="titleInput">標題</label>
+                <input type="text" id="titleInput" placeholder="書籤標題 (留空自動抓取)">
+            </div>
+            <div class="form-group">
+                <label for="groupInput">群組名稱</label>
+                <input type="text" id="groupInput" placeholder="例如：React 專案、工具庫">
+            </div>
+            <div class="form-group">
+                <label for="noteInput">開發備註</label>
+                <textarea id="noteInput" placeholder="記錄開發進度、遇到的問題、解決方案等..."></textarea>
+            </div>
+            <button class="add-btn" onclick="addBookmark()">
+                ✨ 新增書籤
+            </button>
+        </div>
+
+        <div class="bookmarks-area">
+            <div class="bookmarks-toolbar">
+                <div class="bookmarks-header-info">
+                    <h2>📚 我的書籤</h2>
+                    <div class="bookmark-count">0 個書籤</div>
+                </div>
+                <div class="sort-controls">
+                    <label for="sortSelect">排序:</label>
+                    <select id="sortSelect" onchange="applySort(true)">
+                        <option value="custom">自訂順序 (預設)</option>
+                        <option value="title_asc">標題 (A-Z)</option>
+                        <option value="title_desc">標題 (Z-A)</option>
+                        <option value="group_asc">群組 (A-Z)</option>
+                        <option value="group_desc">群組 (Z-A)</option>
+                        <option value="date_desc">新增時間 (新到舊)</option>
+                        <option value="date_asc">新增時間 (舊到新)</option>
+                        <option value="url_asc">網址 (A-Z)</option>
+                        <option value="url_desc">網址 (Z-A)</option>
+                    </select>
+                </div>
+                <div class="import-export-buttons">
+                    <button class="action-button import-btn" onclick="triggerImport()">📥 匯入</button>
+                    <button class="action-button export-btn" onclick="exportBookmarksFile()">📤 匯出</button>
+                </div>
+            </div>
+            <input type="file" id="importFileInput" accept=".json" style="display: none;" onchange="importBookmarksFromFile(event)">
+
+            <div class="bookmarks-list" id="bookmarksList">
+                <!-- Empty state will be rendered here by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 編輯模態框 -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>編輯書籤</h3>
+                <button class="close-btn" onclick="closeEditModal()">×</button>
+            </div>
+            <div class="form-group">
+                <label for="editUrlInput">網址 *</label>
+                <input type="url" id="editUrlInput" required>
+            </div>
+            <div class="form-group">
+                <label for="editTitleInput">標題</label>
+                <input type="text" id="editTitleInput">
+            </div>
+            <div class="form-group">
+                <label for="editGroupInput">群組名稱</label>
+                <input type="text" id="editGroupInput">
+            </div>
+            <div class="form-group">
+                <label for="editNoteInput">開發備註</label>
+                <textarea id="editNoteInput"></textarea>
+            </div>
+            <div class="form-group">
+                <label>新增時間</label>
+                <input type="text" id="editCreatedAtDisplay" readonly style="background-color: #f8f9fa; cursor: default;">
+            </div>
+            <div class="modal-buttons">
+                <button class="cancel-btn" onclick="closeEditModal()">取消</button>
+                <button class="save-btn" onclick="saveEdit()">💾 儲存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 工具提示 -->
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        let bookmarks = [];
+        let currentEditIndex = -1; // Stores the actual index in the `bookmarks` array
+        let draggedVisualIndex = -1; // Stores the visual index from the rendered list during drag
+
+        let currentSortOrder = localStorage.getItem('devBookmarksSortOrder') || 'custom';
+
+        // DOM Elements
+        const addSection = document.getElementById('addSection');
+        const toggleAddFormBtn = document.getElementById('toggleAddFormBtn');
+        const urlInput = document.getElementById('urlInput');
+        const titleInput = document.getElementById('titleInput');
+        const groupInput = document.getElementById('groupInput');
+        const noteInput = document.getElementById('noteInput');
+        const bookmarksList = document.getElementById('bookmarksList');
+        const bookmarkCountElement = document.querySelector('.bookmark-count');
+        const editModal = document.getElementById('editModal');
+        const editUrlInput = document.getElementById('editUrlInput');
+        const editTitleInput = document.getElementById('editTitleInput');
+        const editGroupInput = document.getElementById('editGroupInput');
+        const editNoteInput = document.getElementById('editNoteInput');
+        const editCreatedAtDisplay = document.getElementById('editCreatedAtDisplay');
+        const tooltip = document.getElementById('tooltip');
+        const importFileInput = document.getElementById('importFileInput');
+        const sortSelect = document.getElementById('sortSelect');
+
+
+        function toggleAddForm() {
+            const isVisible = addSection.classList.toggle('visible');
+            toggleAddFormBtn.textContent = isVisible ? '➖ 隱藏新增介面' : '✨ 開啟新增介面';
+            if (isVisible) urlInput.focus();
+        }
+
+        function loadBookmarks() {
+            const savedBookmarks = JSON.parse(localStorage.getItem('devBookmarks') || '[]');
+            bookmarks = savedBookmarks.map(bm => ({
+                ...bm,
+                id: bm.id || Date.now() + Math.random(), 
+                group: bm.group || '',
+                createdAt: bm.createdAt || new Date(0).toISOString()
+            }));
+            
+            sortSelect.value = currentSortOrder;
+            applySortInternal(false); // Apply sort without re-saving preference, then render
+            renderBookmarks();
+        }
+
+        function saveBookmarks() {
+            localStorage.setItem('devBookmarks', JSON.stringify(bookmarks));
+            localStorage.setItem('devBookmarksSortOrder', currentSortOrder);
+        }
+
+        async function addBookmark() {
+            const url = urlInput.value.trim();
+            const title = titleInput.value.trim();
+            const group = groupInput.value.trim();
+            const note = noteInput.value.trim();
+
+            if (!url || !isValidUrl(url)) {
+                alert('請輸入有效的網址！'); urlInput.focus(); return;
+            }
+
+            let finalTitle = title;
+            if (!finalTitle) {
+                finalTitle = await fetchPageTitle(url) || extractDomainFromUrl(url);
+            }
+
+            const newBookmark = {
+                id: Date.now(),
+                url: url,
+                title: finalTitle,
+                group: group,
+                note: note,
+                createdAt: new Date().toISOString()
+            };
+
+            bookmarks.unshift(newBookmark); // Add to top of current array
+            applySortInternal(false); // Re-sort in memory based on currentSortOrder
+            saveBookmarks();
+            renderBookmarks();
+
+            urlInput.value = ''; titleInput.value = ''; groupInput.value = ''; noteInput.value = '';
+            urlInput.focus();
+        }
+        
+        function isValidUrl(string) {
+            try { new URL(string); return true; } catch (_) { return false; }
+        }
+
+        async function fetchPageTitle(url) { // CORS limited
+            try { return extractDomainFromUrl(url); } catch { return null; }
+        }
+
+        function extractDomainFromUrl(url) {
+            try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return '未知網站'; }
+        }
+        
+        function formatDate(isoString) {
+            if (!isoString) return 'N/A';
+            try {
+                const date = new Date(isoString);
+                return date.toLocaleString('sv-SE', { 
+                    year: 'numeric', month: '2-digit', day: '2-digit', 
+                    hour: '2-digit', minute: '2-digit' 
+                }).replace('T', ' '); // Ensure space for some locales
+            } catch (e) { return '無效日期'; }
+        }
+
+        function renderBookmarks() {
+            bookmarkCountElement.textContent = `${bookmarks.length} 個書籤`;
+
+            if (bookmarks.length === 0) {
+                bookmarksList.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
+                        <h3>還沒有書籤</h3><p>新增第一個書籤開始記錄你的開發旅程吧！</p>
+                    </div>`;
+                return;
+            }
+
+            bookmarksList.innerHTML = bookmarks.map((bookmark, index) => `
+                <div class="bookmark-item fade-in" draggable="true" data-id="${bookmark.id}" data-visual-index="${index}">
+                    <div class="bookmark-header">
+                        <div class="bookmark-info">
+                            <div class="bookmark-title">
+                                ${escapeHTML(bookmark.title)}
+                                ${bookmark.note ? `<span class="note-indicator" 
+                                    onmouseenter="showTooltip(event, ${index})"
+                                    onmouseleave="hideTooltip()"
+                                    onclick="toggleFullNote(event, '${bookmark.id}')" 
+                                    title="查看/隱藏備註">💬</span>` : ''}
+                            </div>
+                            <a href="${escapeHTML(bookmark.url)}" target="_blank" class="bookmark-url">${escapeHTML(bookmark.url)}</a>
+                            <div class="bookmark-meta">
+                                ${bookmark.group ? `<span class="bookmark-group">組別: ${escapeHTML(bookmark.group)}</span>` : ''}
+                                <span class="bookmark-created">新增: ${formatDate(bookmark.createdAt)}</span>
+                            </div>
+                        </div>
+                        <div class="bookmark-actions">
+                            <button class="action-btn drag-handle" title="拖拽排序">⋮⋮</button>
+                            <button class="action-btn edit-btn" onclick="openEditModalById(${bookmark.id})" title="編輯">✏️</button>
+                            <button class="action-btn delete-btn" onclick="deleteBookmarkById(${bookmark.id})" title="刪除">🗑️</button>
+                        </div>
+                    </div>
+                    ${bookmark.note ? `<div class="bookmark-note-content" id="note-content-${bookmark.id}">${escapeHTML(bookmark.note)}</div>` : ''}
+                </div>
+            `).join('');
+
+            bindDragEvents();
+        }
+        
+        function toggleFullNote(event, bookmarkId) {
+            event.stopPropagation();
+            const noteContentElement = document.getElementById(`note-content-${bookmarkId}`);
+            if (noteContentElement) {
+                noteContentElement.classList.toggle('visible');
+            }
+            hideTooltip();
+        }
+
+        function escapeHTML(str) {
+            if (typeof str !== 'string') return String(str == null ? '' : str); // Handle null/undefined
+            return str.replace(/[&<>'"]/g, tag => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[tag] || tag));
+        }
+
+        function findBookmarkIndexById(id) {
+            return bookmarks.findIndex(bm => bm.id === id);
+        }
+        
+        function bindDragEvents() {
+            const items = document.querySelectorAll('.bookmark-item');
+            items.forEach(item => {
+                item.addEventListener('dragstart', (e) => {
+                    draggedVisualIndex = parseInt(e.currentTarget.dataset.visualIndex); 
+                    e.currentTarget.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+
+                item.addEventListener('dragend', (e) => {
+                    e.currentTarget.classList.remove('dragging');
+                    draggedVisualIndex = -1;
+                });
+
+                item.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+
+                item.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const targetVisualIndex = parseInt(e.currentTarget.dataset.visualIndex);
+                    
+                    if (draggedVisualIndex !== -1 && draggedVisualIndex !== targetVisualIndex) {
+                        // Perform the splice on the `bookmarks` array directly
+                        const draggedItem = bookmarks.splice(draggedVisualIndex, 1)[0];
+                        bookmarks.splice(targetVisualIndex, 0, draggedItem);
+                        
+                        currentSortOrder = 'custom'; 
+                        sortSelect.value = 'custom'; 
+                        
+                        saveBookmarks(); 
+                        renderBookmarks();
+                    }
+                });
+            });
+        }
+
+        function showTooltip(event, visualIndex) {
+            const bookmark = bookmarks[visualIndex]; 
+            if (!bookmark || !bookmark.note || !bookmark.note.trim()) return;
+            
+            tooltip.innerHTML = escapeHTML(bookmark.note);
+            
+            const indicator = event.currentTarget;
+            const indicatorRect = indicator.getBoundingClientRect();
+
+            let top = indicatorRect.bottom + window.scrollY + 5;
+            let left = indicatorRect.left + window.scrollX + (indicatorRect.width / 2);
+
+            tooltip.style.top = `${top}px`;
+            tooltip.style.left = `${left}px`;
+            tooltip.style.transform = 'translateX(-50%) translateY(0)'; 
+            tooltip.classList.add('show');
+
+            const tooltipRect = tooltip.getBoundingClientRect();
+            if (tooltipRect.right > window.innerWidth - 10) {
+                left = window.innerWidth - 10 - tooltipRect.width / 2;
+                 tooltip.style.left = `${left}px`;
+            } else if (tooltipRect.left < 10) {
+                left = 10 + tooltipRect.width / 2;
+                tooltip.style.left = `${left}px`;
+            }
+        }
+
+        function hideTooltip() {
+            tooltip.classList.remove('show');
+            tooltip.style.transform = 'translateX(-50%) translateY(8px)';
+        }
+
+        function openEditModalById(id) {
+            currentEditIndex = findBookmarkIndexById(id);
+            if (currentEditIndex === -1) return;
+            const bookmark = bookmarks[currentEditIndex];
+            
+            editUrlInput.value = bookmark.url;
+            editTitleInput.value = bookmark.title;
+            editGroupInput.value = bookmark.group || '';
+            editNoteInput.value = bookmark.note;
+            editCreatedAtDisplay.value = formatDate(bookmark.createdAt);
+            
+            editModal.classList.add('show');
+            editUrlInput.focus();
+        }
+
+        function closeEditModal() {
+            editModal.classList.remove('show');
+            currentEditIndex = -1;
+        }
+
+        function saveEdit() {
+            if (currentEditIndex === -1) return;
+
+            const url = editUrlInput.value.trim();
+            const title = editTitleInput.value.trim();
+            const group = editGroupInput.value.trim();
+            const note = editNoteInput.value.trim();
+
+            if (!url || !isValidUrl(url)) {
+                alert('請輸入有效的網址！'); editUrlInput.focus(); return;
+            }
+
+            const originalBookmark = bookmarks[currentEditIndex];
+            bookmarks[currentEditIndex] = {
+                ...originalBookmark,
+                url: url,
+                title: title || extractDomainFromUrl(url),
+                group: group,
+                note: note
+            };
+            
+            applySortInternal(false);
+            saveBookmarks();
+            renderBookmarks();
+            closeEditModal();
+        }
+
+        function deleteBookmarkById(id) {
+            const indexToDelete = findBookmarkIndexById(id);
+            if (indexToDelete === -1) return;
+
+            if (confirm(`確定要刪除書籤 "${bookmarks[indexToDelete].title}" 嗎？`)) {
+                bookmarks.splice(indexToDelete, 1);
+                // No need to re-sort, current order (custom or sorted) is maintained
+                saveBookmarks();
+                renderBookmarks();
+            }
+        }
+        
+        function triggerImport() { importFileInput.click(); }
+
+        function exportBookmarksFile() {
+            if (bookmarks.length === 0) { alert('沒有書籤可以匯出。'); return; }
+            const filename = `bookmarks_export_${new Date().toISOString().slice(0,10)}.json`;
+            const jsonStr = JSON.stringify(bookmarks, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename; document.body.appendChild(a);
+            a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+            alert('書籤已匯出！');
+        }
+
+        function importBookmarksFromFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (!Array.isArray(importedData)) throw new Error('匯入的檔案格式不正確...');
+                    
+                    const validatedData = importedData.map(item => ({
+                        id: item.id || Date.now() + Math.random(),
+                        url: item.url || '', title: item.title || '無標題',
+                        group: item.group || '', note: item.note || '',
+                        createdAt: item.createdAt || new Date().toISOString()
+                    })).filter(item => isValidUrl(item.url));
+
+                    if (validatedData.length === 0 && importedData.length > 0) {
+                        alert('匯入的書籤中沒有有效的項目。'); importFileInput.value = ''; return;
+                    }
+                    
+                    if (confirm(`確定要匯入 ${validatedData.length} 個書籤嗎？這將會取代現有的書籤。`)) {
+                        bookmarks = validatedData;
+                        currentSortOrder = 'custom'; 
+                        sortSelect.value = 'custom';
+                        saveBookmarks(); 
+                        renderBookmarks();
+                        alert('書籤匯入成功！');
+                    }
+                } catch (error) { alert(`匯入失敗：${error.message}`); }
+                finally { importFileInput.value = ''; }
+            };
+            reader.readAsText(file);
+        }
+
+        // Called when user changes sort dropdown
+        function applySort(savePreference = true) {
+            currentSortOrder = sortSelect.value;
+            if (savePreference) {
+                 localStorage.setItem('devBookmarksSortOrder', currentSortOrder);
+            }
+            applySortInternal(true); // Apply and render
+        }
+        
+        // Internal function to sort the `bookmarks` array
+        function applySortInternal(shouldRender = false) {
+            if (currentSortOrder === 'custom') {
+                // For 'custom', the `bookmarks` array is already in the desired order
+                // (either from localStorage load or from drag-and-drop).
+                // No sorting action needed here for 'custom'.
+            } else {
+                let [criteria, direction] = currentSortOrder.split('_');
+                bookmarks.sort((a, b) => {
+                    let valA, valB;
+                    switch (criteria) {
+                        case 'title': valA = (a.title || '').toLowerCase(); valB = (b.title || '').toLowerCase(); break;
+                        case 'group': valA = (a.group || '').toLowerCase(); valB = (b.group || '').toLowerCase(); break;
+                        case 'url': valA = (a.url || '').toLowerCase(); valB = (b.url || '').toLowerCase(); break;
+                        case 'date': valA = new Date(a.createdAt).getTime(); valB = new Date(b.createdAt).getTime(); break;
+                        default: return 0;
+                    }
+                    if (valA < valB) return direction === 'asc' ? -1 : 1;
+                    if (valA > valB) return direction === 'asc' ? 1 : -1;
+                    return 0;
+                });
+            }
+
+            if (shouldRender) {
+                renderBookmarks();
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (editModal.classList.contains('show')) closeEditModal();
+                else if (addSection.classList.contains('visible')) toggleAddForm();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                if (editModal.classList.contains('show')) saveEdit();
+                else if (addSection.classList.contains('visible') && document.activeElement !== noteInput) addBookmark();
+            }
+        });
+
+        editModal.addEventListener('click', (e) => {
+            if (e.target === editModal) closeEditModal();
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadBookmarks();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+[
+  {
+    "id": 1748412506412,
+    "url": "https://dde5.github.io/hua/%E9%96%8B%E7%99%BC%E7%A8%8B%E5%BC%8F%E7%A2%BC%E5%8A%A9%E7%90%86.html",
+    "title": "開發程式碼助理(說明書/無功能)",
+    "group": "教育",
+    "note": "原本打算開發AI程式碼合併的說明書(無功能)",
+    "createdAt": "2025-05-28T06:08:26.412Z"
+  },
+  {
+    "id": 1748411121371,
+    "url": "https://dde5.github.io/foodie/wanhua100.html",
+    "title": "萬華100碗",
+    "group": "",
+    "note": "嘗試紀錄人家的介紹文轉成格式化介紹網頁",
+    "createdAt": "2025-05-28T05:45:21.371Z"
+  },
+  {
+    "id": 1748409625279,
+    "url": "https://dde5.github.io/healthRecords/ja_search.html",
+    "title": "裁判書精準查詢介面",
+    "group": "工具",
+    "note": "透過簡易查詢介面查詢來查到較精準的裁判書",
+    "createdAt": "2025-05-28T05:20:25.279Z"
+  },
+  {
+    "id": 1748408122657,
+    "url": "https://preview--ai-english-tutor-pro.lovable.app/",
+    "title": "ai-english-tutor-pro (AI驅動語言學習)",
+    "group": "教育",
+    "note": "可以使用 OpenRouter 的免費AI驅動\n目前題型的變化和版面操作待優化調整",
+    "createdAt": "2025-05-28T04:55:22.657Z"
+  },
+  {
+    "id": 1748406180330,
+    "url": "https://dde5.github.io/healthRecords/health_records_.html",
+    "title": "每日健康記錄",
+    "group": "健康",
+    "note": "紀錄只存在當個設備中，可匯入匯出，尚無雲端支援\n包含營養即時換算平台:計算碳水、鹽、鈉含量比率",
+    "createdAt": "2025-05-28T04:23:00.330Z"
+  },
+  {
+    "id": 1748406081550,
+    "url": "https://dde5.github.io/pg.github.io/PG/LineCode.html",
+    "title": "LineCode編輯器",
+    "group": "文書",
+    "note": "手機Line 還沒更新版本到能用",
+    "createdAt": "2025-05-28T04:21:21.550Z"
+  },
+  {
+    "id": 1748404193687,
+    "url": "https://dde5.github.io/photoCut/PhotoCut3.html",
+    "title": "進階照片裁切與增強器 v3 (觸控優化)",
+    "group": "工具",
+    "note": "v 修改讓觸碰螢幕也能調整範圍框\nx 濾鏡範圍無法呈現真實狀態\nx 毒入照片顯示比例問題 (裁切後OK)",
+    "createdAt": "2025-05-28T03:49:53.687Z"
+  }
+]
